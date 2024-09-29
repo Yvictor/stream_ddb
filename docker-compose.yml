@@ -1,0 +1,10 @@
+# version: '3.7'
+services:
+  ddb:
+    # image: dolphindb/dolphindb:v1.30.23.7
+    image: ddb:streamnode
+    volumes:
+      - /data/ddb_data_stream/data:/data/ddb/server/data
+    container_name: ddb-sjddb-streamnode0
+    restart: always
+    network_mode: "host"

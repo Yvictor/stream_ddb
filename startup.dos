@@ -1,0 +1,97 @@
+stockTradeSchema = streamTable(
+    array(SYMBOL, 0) as Exchange,
+    array(SYMBOL, 0) as Code,
+    array(DATE, 0) as Date,
+    array(NANOTIME, 0) as Time,
+    array(DOUBLE, 0) as Pred,
+    array(SYMBOL, 0) as Action,
+    array(BOOL, 0) as EntryCover,
+    array(DOUBLE, 0) as Price,
+    array(LONG, 0) as Quantity,
+    array(DOUBLE, 0) as QuantityReal
+)
+enableTableShareAndPersistence(
+   table=stockTradeSchema,
+   asynWrite=true,
+   compress=false,
+   cacheSize=10000,
+   tableName="stockTradeStream"
+)
+
+if (existsDatabase("dfs://stockTradeV1")==false) {
+    db = database("dfs://stockTradeV1", VALUE, 2021.01M..2021.02M)    
+}
+if (existsTable("dfs://stockTradeV1", "stockTradeV1")==false) {
+    stockTradeSchema = table(
+        array(SYMBOL, 0) as Exchange,
+        array(SYMBOL, 0) as Code,
+        array(DATE, 0) as Date,
+        array(NANOTIME, 0) as Time,
+        array(DOUBLE, 0) as Pred,
+        array(SYMBOL, 0) as Action,
+        array(BOOL, 0) as EntryCover,
+        array(DOUBLE, 0) as Price,
+        array(LONG, 0) as Quantity,
+        array(DOUBLE, 0) as QuantityReal
+    )
+    db.createPartitionedTable(stockTradeSchema, `stockTradeV1, `Date)
+}
+stockTrade = loadTable("dfs://stockTradeV1", "stockTradeV1")
+
+subscribeTable(, "stockTradeStream", "stream2dfs", offset=-1,
+                handler=stockTrade, msgAsTable=false,
+                batchSize=10000, throttle=60*60*24)
+
+stockModelTradeSchema = streamTable(
+    array(SYMBOL, 0) as Exchange,
+    array(SYMBOL, 0) as Code,
+    array(SYMBOL, 0) as Model,
+    array(DATE, 0) as Date,
+    array(NANOTIME, 0) as Time,
+    array(DOUBLE, 0) as Pred,
+    array(SYMBOL, 0) as Action,
+    array(BOOL, 0) as EntryCover,
+    array(DOUBLE, 0) as Price,
+    array(LONG, 0) as Quantity,
+    array(DOUBLE, 0) as QuantityReal,
+    array(LONG, 0) as TotalVolumeLimit
+)
+
+// stockModelTradeStream.addColumn(["TotalVolumeLimit"], [LONG])
+
+enableTableShareAndPersistence(
+    table=stockModelTradeSchema,
+    asynWrite=true,
+    compress=false,
+    cacheSize=10000,
+    tableName="stockModelTradeStream"
+)
+
+if (existsDatabase("dfs://stockModelTradeV2")==false) {
+    db = database("dfs://stockModelTradeV2", VALUE, 2021.01M..2021.02M)  
+}
+if (existsTable("dfs://stockModelTradeV2", "stockModelTradeV2")==false) {
+    stockModelTradeSchema = table(
+        array(SYMBOL, 0) as Exchange,
+        array(SYMBOL, 0) as Code,
+        array(SYMBOL, 0) as Model,
+        array(DATE, 0) as Date,
+        array(NANOTIME, 0) as Time,
+        array(DOUBLE, 0) as Pred,
+        array(SYMBOL, 0) as Action,
+        array(BOOL, 0) as EntryCover,
+        array(DOUBLE, 0) as Price,
+        array(LONG, 0) as Quantity,
+        array(DOUBLE, 0) as QuantityReal,
+        array(LONG, 0) as TotalVolumeLimit
+    )
+    db.createPartitionedTable(stockModelTradeSchema, `stockModelTradeV2, `Date)
+}
+
+stockModelTrade = loadTable("dfs://stockModelTradeV2", "stockModelTradeV2")
+
+subscribeTable(, "stockModelTradeStream", "streamodel2dfs", offset=-1,
+                 handler=stockModelTrade, msgAsTable=false,
+                 batchSize=10000, throttle=60*60*24)
+
+// unsubscribeTable(, "stockModelTradeStream", "streamodel2dfs")
